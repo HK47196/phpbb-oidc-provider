@@ -1,0 +1,131 @@
+imports:
+  - { resource: parameters.yml }
+  - { resource: cron.yml }
+
+services:
+  HK47196\OIDCProvider\Services\OAuth2Service:
+    arguments:
+      - '@HK47196\OIDCProvider\Repository\ClientRepository'
+      - '@HK47196\OIDCProvider\Repository\AccessTokenRepository'
+      - '@HK47196\OIDCProvider\Repository\ScopeRepository'
+      - '@HK47196\OIDCProvider\Repository\AuthCodeRepository'
+      - '@HK47196\OIDCProvider\Repository\RefreshTokenRepository'
+      - '@HK47196\OIDCProvider\Repository\IdentityRepository'
+
+  hk47196.oidcprovider.listener:
+    class: hk47196\oidcprovider\event\main_listener
+    arguments:
+      - '@user_loader'
+      - '@dbal.conn'
+      - '%hk47196.oidcprovider.access_table%'
+      - '%hk47196.oidcprovider.refresh_token_table%'
+      - '%hk47196.oidcprovider.auth_code_table%'
+      - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
+      - '@request'
+    tags:
+      - { name: event.listener }
+
+  HK47196\OIDCProvider\Core\Helper:
+    arguments:
+      - '@dbal.conn'
+
+
+  HK47196\OIDCProvider\Repository\ClientRepository:
+    arguments:
+      - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
+  HK47196\OIDCProvider\Repository\AccessTokenRepository:
+    arguments:
+      - '@HK47196\OIDCProvider\Manager\DB\AccessTokenManager'
+      - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
+      - '@HK47196\OIDCProvider\Converter\ScopeConverter'
+      - '@HK47196\OIDCProvider\Core\Helper'
+  HK47196\OIDCProvider\Repository\ScopeRepository:
+    arguments:
+      - '@HK47196\OIDCProvider\Manager\Memory\ScopeManager'
+      - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
+      - '@HK47196\OIDCProvider\Converter\ScopeConverter'
+  HK47196\OIDCProvider\Repository\AuthCodeRepository:
+    arguments:
+      - '@HK47196\OIDCProvider\Manager\DB\AuthorizationCodeManager'
+      - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
+      - '@HK47196\OIDCProvider\Converter\ScopeConverter'
+      - '@HK47196\OIDCProvider\Core\Helper'
+  HK47196\OIDCProvider\Repository\RefreshTokenRepository:
+    arguments:
+      - '@HK47196\OIDCProvider\Manager\DB\RefreshTokenManager'
+      - '@HK47196\OIDCProvider\Manager\DB\AccessTokenManager'
+      - '@HK47196\OIDCProvider\Core\Helper'
+  HK47196\OIDCProvider\Repository\IdentityRepository:
+    arguments:
+      - '@dbal.conn'
+      - '@user_loader'
+      - '@avatar.manager'
+      - '%core.php_ext%'
+      - '@path_helper'
+
+
+  HK47196\OIDCProvider\Converter\ScopeConverter:
+
+
+  HK47196\OIDCProvider\Manager\Memory\ClientManager:
+  HK47196\OIDCProvider\Manager\DB\AccessTokenManager:
+    arguments:
+      - '@dbal.conn'
+      - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
+      - '%hk47196.oidcprovider.access_table%'
+      - 'true'
+  HK47196\OIDCProvider\Manager\DB\AuthorizationCodeManager:
+    arguments:
+      - '@dbal.conn'
+      - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
+      - '%hk47196.oidcprovider.auth_code_table%'
+  HK47196\OIDCProvider\Manager\DB\RefreshTokenManager:
+    arguments:
+      - '@dbal.conn'
+      - '@HK47196\OIDCProvider\Manager\DB\AccessTokenManager'
+      - '%hk47196.oidcprovider.refresh_token_table%'
+  HK47196\OIDCProvider\Manager\Memory\ScopeManager:
+
+
+  HK47196\OIDCProvider\controller\authorization:
+    arguments:
+      - '@HK47196\OIDCProvider\Services\OAuth2Service'
+      - '@user'
+      - '@request'
+      - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
+      - '@hk47196.oidcprovider.factory.server_request_creator'
+      - '@hk47196.oidcprovider.factory.psr_http'
+      - '@hk47196.oidcprovider.factory.http_foundation'
+      - '@hk47196.oidcprovider.factory.psr17'
+
+  HK47196\OIDCProvider\controller\token:
+    arguments:
+      - '@HK47196\OIDCProvider\Services\OAuth2Service'
+      - '@request'
+      - '@hk47196.oidcprovider.factory.server_request_creator'
+      - '@hk47196.oidcprovider.factory.http_foundation'
+      - '@hk47196.oidcprovider.factory.psr17'
+
+  HK47196\OIDCProvider\controller\userinfo:
+    arguments:
+      - '@user'
+      - '@request'
+
+  hk47196.oidcprovider.factory.psr17:
+    class: Nyholm\Psr7\Factory\Psr17Factory
+  hk47196.oidcprovider.factory.psr_http:
+    class: Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory
+    arguments:
+      - '@hk47196.oidcprovider.factory.psr17'
+      - '@hk47196.oidcprovider.factory.psr17'
+      - '@hk47196.oidcprovider.factory.psr17'
+      - '@hk47196.oidcprovider.factory.psr17'
+  hk47196.oidcprovider.factory.http_foundation:
+    class: Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory
+  hk47196.oidcprovider.factory.server_request_creator:
+    class: Nyholm\Psr7Server\ServerRequestCreator
+    arguments:
+      - '@hk47196.oidcprovider.factory.psr17'
+      - '@hk47196.oidcprovider.factory.psr17'
+      - '@hk47196.oidcprovider.factory.psr17'
+      - '@hk47196.oidcprovider.factory.psr17'

@@ -1,0 +1,4 @@
+scopes:
+  - 'openid'
+  - 'email'
+  - 'profile'

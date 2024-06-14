@@ -1,0 +1,2 @@
+#groups starting with this will be included in the ID token, with the prefix removed
+id_group_prefix: "LINK_"

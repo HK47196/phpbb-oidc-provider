@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="oidcprovider" default="build">
+
+
+    <!-- ============================================  -->
+    <!-- Target: prepare                               -->
+    <!-- ============================================  -->
+    <target name="prepare">
+        <echo msg="Making directory ./build"/>
+        <delete dir="././build"/>
+        <mkdir dir="./build"/>
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: build                                 -->
+    <!-- ============================================  -->
+    <target name="build" depends="prepare">
+        <!-- Copy only the specified files and directories -->
+        <copy todir="./build">
+            <fileset dir=".">
+                <include name="controller/**"/>
+                <include name="styles/**"/>
+                <include name="composer.lock"/>
+                <include name="composer.json"/>
+                <include name="config/**"/>
+                <include name="event/**"/>
+                <include name="core/**"/>
+                <include name="Core/**"/>
+                <include name="cron/**"/>
+                <include name="Converter/**"/>
+                <include name="Manager/**"/>
+                <include name="Model/**"/>
+                <include name="Repository/**"/>
+                <include name="Services/**"/>
+                <include name="Grants/**"/>
+                <include name="ValueObject/**"/>
+                <include name="Entity/**"/>
+                <include name="notification/**"/>
+                <include name="migrations/**"/>
+                <include name="pnpm-lock.yaml"/>
+                <include name="package.json"/>
+                <include name="ext.php"/>
+                <include name="helper.php"/>
+            </fileset>
+        </copy>
+
+        <!-- Rename .twig files to .html -->
+        <move todir="./build">
+            <fileset dir="./build">
+                <include name="**/*.twig"/>
+            </fileset>
+            <mapper type="glob" from="*.twig" to="*.html"/>
+        </move>
+    </target>
+</project>

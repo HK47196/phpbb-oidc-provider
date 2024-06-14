@@ -1,0 +1,11 @@
+services:
+  HK47196\OIDCProvider\cron\cleanup_expired_tokens_task:
+    arguments:
+      - '@HK47196\OIDCProvider\Manager\DB\AccessTokenManager'
+      - '@HK47196\OIDCProvider\Manager\DB\AuthorizationCodeManager'
+      - '@HK47196\OIDCProvider\Manager\DB\RefreshTokenManager'
+      - '@config'
+    tags:
+      - { name: cron.task }
+    calls:
+      - [ set_name, [ oidcprovider.cleanup_expired ] ]

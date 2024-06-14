@@ -1,0 +1,52 @@
+{
+  "name": "hk47196/oidcprovider",
+  "type": "phpbb-extension",
+  "description": "OIDC Provider for phpbb",
+  "version": "1.0.0",
+  "time": "2023-06-11",
+  "license": "GPL-2.0",
+  "authors": [
+    {
+      "name": "rs",
+      "role": "Developer"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../../phpbb-core"
+    }
+  ],
+  "require": {
+    "php": ">=8.2",
+    "league/oauth2-server": "^8.5.4",
+    "nyholm/psr7": "^1.8",
+    "nyholm/psr7-server": "^1.1",
+    "beberlei/assert": "^3.3",
+    "symfony/psr-http-message-bridge": "^7.0",
+    "symfony/yaml": "^6.4",
+    "steverhoades/oauth2-openid-connect-server": "^2.6",
+    "lcobucci/jwt": "^5.3",
+    "ext-curl": "*"
+  },
+  "require-dev": {
+    "phing/phing": "^3.0",
+    "vimeo/psalm": "^5.24",
+    "phpbb/phpbb-core": "3.3.x-dev"
+  },
+  "extra": {
+    "display-name": "OIDC Provider",
+    "soft-require": {
+      "phpbb/phpbb": ">=3.3.0"
+    },
+    "extension-name": "HK47196/oidcprovider"
+  },
+  "scripts": {
+    "psalm": "vendor/bin/psalm --config=psalm.xml"
+  },
+  "autoload": {
+    "psr-4": {
+      "HK47196\\OIDCProvider\\": "."
+    }
+  }
+}

@@ -1,0 +1,14 @@
+oauth2_authorize:
+  path: /oauth2/v1/authorize
+  defaults: { _controller: HK47196\OIDCProvider\controller\authorization:handle }
+  methods: [ GET, POST ]
+
+oauth2_token:
+  path: /oauth2/v1/token
+  defaults: { _controller: HK47196\OIDCProvider\controller\token:handle }
+  methods: [ GET, POST ]
+
+#oidc_userinfo:
+#  path: /oidc/v1/userinfo
+#  defaults: { _controller: "hk47196.oidcprovider.controller.userinfo:handle" }
+#  methods: [ GET, POST ]

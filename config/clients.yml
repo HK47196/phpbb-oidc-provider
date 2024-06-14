@@ -1,0 +1,15 @@
+clients:
+  - name: 'name'
+    id: 'id'
+    secret: 'secret'
+    redirect_uris:
+      - 'https://openidconnect.net/callback'
+    scopes:
+      - 'openid'
+      - 'email'
+      - 'profile'
+    grant_types:
+      - 'authorization_code'
+      - 'refresh_token'
+    active: true
+    allow_plain_text_pkce: false
