@@ -8,7 +8,13 @@ oauth2_token:
   defaults: { _controller: HK47196\OIDCProvider\controller\token:handle }
   methods: [ GET, POST ]
 
-#oidc_userinfo:
-#  path: /oidc/v1/userinfo
-#  defaults: { _controller: "hk47196.oidcprovider.controller.userinfo:handle" }
-#  methods: [ GET, POST ]
+oidc_userinfo:
+  path: /oauth2/v1/userinfo
+  defaults: { _controller: HK47196\OIDCProvider\controller\userinfo:handle }
+  methods: [ GET, POST ]
+
+oidc_discovery:
+  # path: /.well-known/openid-configuration
+  path: /oauth2/v1/discovery
+  defaults: { _controller: HK47196\OIDCProvider\controller\discovery:handle }
+  methods: [ GET ]
