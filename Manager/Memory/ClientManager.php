@@ -67,8 +67,8 @@ class ClientManager implements ClientManagerInterface
 			$allowPlainTextPkce = $client['allow_plain_text_pkce'];
 			$backChannelLogoutUrl = $client['backchannel_logout_url'] ?? null;
 
-			$clients[] = new Client($id,
-				$name,
+			$clients[] = new Client($name,
+				$id,
 				$secret,
 				$redirectUris,
 				$grants,
