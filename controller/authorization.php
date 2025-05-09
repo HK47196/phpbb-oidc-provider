@@ -10,6 +10,7 @@ use HK47196\OIDCProvider\Entity\User as UserEntity;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
+use phpbb\config\config;
 use phpbb\request\request;
 use phpbb\user;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -27,6 +28,7 @@ class authorization
 	protected HttpMessageFactoryInterface $httpMessageFactory;
 	private HttpFoundationFactoryInterface $httpFoundationFactory;
 	private ResponseFactoryInterface $responseFactory;
+	protected config $config;
 
 	public function __construct(OAuth2Service                  $oauth2Service,
 	                            user                           $user,
@@ -35,7 +37,8 @@ class authorization
 	                            ServerRequestCreator           $creator,
 	                            HttpMessageFactoryInterface    $httpMessageFactory,
 	                            HttpFoundationFactoryInterface $httpFoundationFactory,
-	                            ResponseFactoryInterface       $responseFactory)
+	                            ResponseFactoryInterface       $responseFactory,
+	                            config                         $config)
 	{
 		$this->oauth2Service = $oauth2Service;
 		$this->user = $user;
@@ -48,11 +51,11 @@ class authorization
 		/** @var Psr17Factory $responseFactory */
 		$this->responseFactory = $responseFactory;
 		$this->creator = $creator;
+		$this->config = $config;
 	}
 
 	public function handle(): Response
 	{
-		//TODO: perf??
 		$this->request->enable_super_globals();
 		$serverRequest = $this->creator->fromGlobals();
 		$serverResponse = $this->responseFactory->createResponse();
@@ -74,13 +77,9 @@ class authorization
 
 
 			$userId = (int)$this->user->data['user_id'];
-			// Check if the user is logged into phpBB
 			if ($userId === ANONYMOUS) {
-				// Redirect to phpBB login page with proper redirection handling
 				$redirectUrl = append_sid("{$this->request->server('REQUEST_URI')}");
 				login_box($redirectUrl);
-				// After login, phpBB should redirect back to the original request
-				// The login_box function will handle the redirection internally
 				return new Response('phpBB Login', 302, ['Location' => $redirectUrl]);
 			}
 

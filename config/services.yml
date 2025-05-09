@@ -22,6 +22,7 @@ services:
       - '%hk47196.oidcprovider.auth_code_table%'
       - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
       - '@request'
+      - '@config'
     tags:
       - { name: event.listener }
 
@@ -97,6 +98,7 @@ services:
       - '@hk47196.oidcprovider.factory.psr_http'
       - '@hk47196.oidcprovider.factory.http_foundation'
       - '@hk47196.oidcprovider.factory.psr17'
+      - '@config'
 
   HK47196\OIDCProvider\controller\token:
     arguments:
@@ -105,11 +107,25 @@ services:
       - '@hk47196.oidcprovider.factory.server_request_creator'
       - '@hk47196.oidcprovider.factory.http_foundation'
       - '@hk47196.oidcprovider.factory.psr17'
+      - '@config'
 
   HK47196\OIDCProvider\controller\userinfo:
     arguments:
       - '@user'
       - '@request'
+      - '@HK47196\OIDCProvider\Manager\DB\AccessTokenManager'
+      - '@HK47196\OIDCProvider\Repository\IdentityRepository'
+      - '@hk47196.oidcprovider.factory.server_request_creator'
+      - '@hk47196.oidcprovider.factory.http_foundation'
+      - '@hk47196.oidcprovider.factory.psr17'
+      - '@config'
+
+  HK47196\OIDCProvider\controller\discovery:
+    arguments:
+      - '@request'
+      - '@HK47196\OIDCProvider\Manager\Memory\ScopeManager'
+      - '@config'
+
 
   hk47196.oidcprovider.factory.psr17:
     class: Nyholm\Psr7\Factory\Psr17Factory

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace HK47196\OIDCProvider\controller;
@@ -7,68 +8,95 @@ use HK47196\OIDCProvider\Manager\ScopeManagerInterface;
 use HK47196\OIDCProvider\ValueObject\Scope;
 use phpbb\config\config;
 use phpbb\request\request;
-use phpbb\symfony_request;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Yaml\Yaml;
 
 class discovery
 {
     protected request $request;
-    protected RouterInterface $router;
     protected ScopeManagerInterface $scopeManager;
     protected config $config;
+    protected array $identityConfig;
 
     public function __construct(
         request $request,
-        RouterInterface $router,
         ScopeManagerInterface $scopeManager,
         config $config
     ) {
         $this->request = $request;
-        $this->router = $router;
         $this->scopeManager = $scopeManager;
         $this->config = $config;
+        
+        // Load identity configuration directly from the YAML file
+        $identityYmlPath = __DIR__ . '/../config/identity.yml';
+        if (!file_exists($identityYmlPath)) {
+            throw new RuntimeException('Identity configuration file not found at: ' . $identityYmlPath);
+        }
+        
+        $this->identityConfig = Yaml::parse(file_get_contents($identityYmlPath));
     }
 
     public function handle(): Response
     {
-        // Get the base URL for the issuer
-        $baseUrl = $this->getBaseUrl();
+        $issuer = $this->identityConfig['issuer'] ?? '';
         
-        // Build the discovery document
+        // Require issuer configuration
+        if (empty($issuer)) {
+            throw new RuntimeException('The issuer is not configured in config/identity.yml. Please set the "issuer" parameter with a valid URL.');
+        }
+        
+        $endpoints = $this->identityConfig['endpoints'] ?? [];
+        
+        // Build complete endpoint URLs
+        $authorizationEndpoint = $this->buildEndpointUrl($issuer, $endpoints['authorization'] ?? '/oauth2/v1/authorize');
+        $tokenEndpoint = $this->buildEndpointUrl($issuer, $endpoints['token'] ?? '/oauth2/v1/token');
+        $userinfoEndpoint = $this->buildEndpointUrl($issuer, $endpoints['userinfo'] ?? '/oauth2/v1/userinfo');
+        
+        // For JWKS URI, we need to determine if it's relative to the server root or a full URL
+        $jwksUri = $endpoints['jwks'] ?? '/.well-known/jwks.json';
+        if (strpos($jwksUri, 'http') === 0) {
+            // It's already a full URL
+            $jwksEndpoint = $jwksUri;
+        } else if (strpos($jwksUri, '/') === 0) {
+            // It's relative to the server root
+            $rootUrl = $this->extractRootUrl($issuer);
+            $jwksEndpoint = $rootUrl . $jwksUri;
+        } else {
+            // It's relative to the issuer
+            $jwksEndpoint = rtrim($issuer, '/') . '/' . $jwksUri;
+        }
+        
+        // Optional endpoints
+        $serviceDocumentation = $this->buildEndpointUrl($issuer, $endpoints['service_documentation'] ?? '/docs/oidc');
+        $opPolicyUri = $this->buildEndpointUrl($issuer, $endpoints['op_policy_uri'] ?? '/privacy');
+        $opTosUri = $this->buildEndpointUrl($issuer, $endpoints['op_tos_uri'] ?? '/terms');
+
         $discoveryDocument = [
-            // Required fields
-            'issuer' => $baseUrl,
-            'authorization_endpoint' => $baseUrl . '/oauth2/v1/authorize',
-            'token_endpoint' => $baseUrl . '/oauth2/v1/token',
-            'userinfo_endpoint' => $baseUrl . '/oauth2/v1/userinfo',
-            'jwks_uri' => $baseUrl . '/jwks.json',
-            
-            // Supported scopes
+            'issuer' => $issuer,
+            'authorization_endpoint' => $authorizationEndpoint,
+            'token_endpoint' => $tokenEndpoint,
+            'userinfo_endpoint' => $userinfoEndpoint,
+            'jwks_uri' => $jwksEndpoint,
+
             'scopes_supported' => $this->getSupportedScopes(),
-            
-            // Supported response types
+
             'response_types_supported' => [
                 'code',
                 'id_token',
                 'token id_token'
             ],
-            
-            // Supported grant types
+
             'grant_types_supported' => [
                 'authorization_code',
                 'implicit',
                 'refresh_token'
             ],
-            
-            // Subject types supported
+
             'subject_types_supported' => ['public'],
-            
-            // ID Token signing algorithms
+
             'id_token_signing_alg_values_supported' => ['RS256'],
-            
-            // Additional fields
+
             'claims_supported' => [
                 'sub',
                 'iss',
@@ -81,67 +109,61 @@ class discovery
                 'profile',
                 'id_groups'
             ],
-            
-            // OIDC service documentation
-            'service_documentation' => $baseUrl . '/docs/oidc',
-            
-            // UI locales supported
+
+            'service_documentation' => $serviceDocumentation,
             'ui_locales_supported' => ['en'],
-            
-            // OP policy URL
-            'op_policy_uri' => $baseUrl . '/privacy',
-            
-            // OP terms of service
-            'op_tos_uri' => $baseUrl . '/terms',
+            'op_policy_uri' => $opPolicyUri,
+            'op_tos_uri' => $opTosUri,
         ];
-        
-        // Set the Content-Type header to application/json
-        $response = new \phpbb\json_response($discoveryDocument);
-        
+
+        $jsonContent = json_encode($discoveryDocument);
+        $response = new Response($jsonContent);
+        $response->headers->set('Content-Type', 'application/json');
+
         return $response;
     }
     
     /**
-     * Get the base URL for the issuer
-     * 
-     * @return string The base URL
+     * Build a complete endpoint URL from the issuer and endpoint path
      */
-    private function getBaseUrl(): string
+    private function buildEndpointUrl(string $issuer, string $endpoint): string
     {
-        // Get the server name and protocol
-        $serverName = $this->request->server('SERVER_NAME', '');
-        $https = $this->request->server('HTTPS', '');
-        $protocol = (!empty($https) && $https !== 'off') ? 'https' : 'http';
-        
-        // Get the server port
-        $port = (int)$this->request->server('SERVER_PORT', 80);
-        
-        // Only include port in URL if it's non-standard
-        $portString = '';
-        if (($protocol === 'http' && $port !== 80) || ($protocol === 'https' && $port !== 443)) {
-            $portString = ':' . $port;
+        if (strpos($endpoint, 'http') === 0) {
+            // Endpoint is already a full URL
+            return $endpoint;
         }
         
-        // Get the script path
-        $scriptPath = $this->request->server('SCRIPT_NAME', '');
-        $scriptDir = dirname($scriptPath);
-        $scriptDir = ($scriptDir === '/') ? '' : $scriptDir;
+        // Ensure endpoint starts with '/' and issuer doesn't end with '/'
+        $normalizedEndpoint = strpos($endpoint, '/') === 0 ? $endpoint : '/' . $endpoint;
+        $normalizedIssuer = rtrim($issuer, '/');
         
-        // Build the base URL
-        return $protocol . '://' . $serverName . $portString . $scriptDir;
+        return $normalizedIssuer . $normalizedEndpoint;
     }
     
     /**
-     * Get the list of supported scopes
-     * 
-     * @return array The list of supported scopes
+     * Extract the root URL (scheme + host + port) from the full issuer URL
+     */
+    private function extractRootUrl(string $issuer): string
+    {
+        $parsedUrl = parse_url($issuer);
+        if ($parsedUrl === false || empty($parsedUrl['scheme']) || empty($parsedUrl['host'])) {
+            throw new RuntimeException('Invalid issuer URL: ' . $issuer);
+        }
+        
+        $rootUrl = $parsedUrl['scheme'] . '://' . $parsedUrl['host'];
+        if (!empty($parsedUrl['port'])) {
+            $rootUrl .= ':' . $parsedUrl['port'];
+        }
+        
+        return $rootUrl;
+    }
+
+    /**
+     * Get the list of supported scopes as strings
      */
     private function getSupportedScopes(): array
     {
-        // Get all scopes from the scope manager
         $scopes = $this->scopeManager->findAll();
-        
-        // Convert scope objects to strings
         return array_map(function (Scope $scope) {
             return (string)$scope;
         }, $scopes);

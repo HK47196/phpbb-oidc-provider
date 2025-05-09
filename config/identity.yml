@@ -1,2 +1,26 @@
 #groups starting with this will be included in the ID token, with the prefix removed
 id_group_prefix: "LINK_"
+
+# The issuer URL for the OpenID Connect provider
+# This should be the full URL including schema (https://) and any port if needed
+issuer: "https://example.com"
+
+# OpenID Connect Endpoints
+# These should be full URLs or paths relative to the issuer
+endpoints:
+  # Authorization endpoint
+  authorization: "/oauth2/v1/authorize"
+  
+  # Token endpoint
+  token: "/oauth2/v1/token"
+  
+  # UserInfo endpoint
+  userinfo: "/oauth2/v1/userinfo"
+  
+  # JWKS URI - can be an absolute URL or path relative to server root
+  jwks: "/.well-known/jwks.json"
+  
+  # Optional endpoints - used in discovery document
+  # service_documentation: "/docs/oidc"
+  op_policy_uri: "/ucp.php?mode=privacy"
+  op_tos_uri: "/ucp.php?mode=terms"

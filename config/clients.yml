@@ -13,3 +13,18 @@ clients:
       - 'refresh_token'
     active: true
     allow_plain_text_pkce: false
+  - name: 'Playwright Test Client'
+    id: 'playwright_test_client'
+    secret: 'very_secret_playwright_password' # Use a strong, unique secret
+    redirect_uris:
+      - 'https://localhost:9999/callback' # Example callback URL for test runner
+      # Add other redirect URIs if needed by specific tests
+    scopes:
+      - 'openid'
+      - 'email'
+      - 'profile'
+    grant_types:
+      - 'authorization_code'
+      # - 'refresh_token' # Enable if refresh token tests are needed
+    active: true
+    allow_plain_text_pkce: false # Recommended for security

@@ -31,7 +31,6 @@
   },
   "require-dev": {
     "phing/phing": "^3.0",
-    "vimeo/psalm": "^5.24",
     "phpbb/phpbb-core": "3.3.x-dev"
   },
   "extra": {
@@ -40,9 +39,6 @@
       "phpbb/phpbb": ">=3.3.0"
     },
     "extension-name": "HK47196/oidcprovider"
-  },
-  "scripts": {
-    "psalm": "vendor/bin/psalm --config=psalm.xml"
   },
   "autoload": {
     "psr-4": {

@@ -11,4 +11,11 @@ interface ScopeManagerInterface
 	public function find(string $identifier): ?Scope;
 
 	public function save(Scope $scope): void;
+	
+	/**
+	 * Returns all available scopes
+	 * 
+	 * @return list<Scope>
+	 */
+	public function findAll(): array;
 }

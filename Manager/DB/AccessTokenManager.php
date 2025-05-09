@@ -26,12 +26,15 @@ final class AccessTokenManager implements AccessTokenManagerInterface
 	public function __construct(driver_interface $db,
 	                            ClientManagerInterface $clientManager,
 	                            string $table,
-	                            bool $persistAccessToken)
+	                            $persistAccessToken)
 	{
 		$this->db = $db;
-		$this->persistAccessToken = $persistAccessToken;
 		$this->clientManager = $clientManager;
 		$this->table = $table;
+		// Ensure the persistAccessToken parameter is properly converted to boolean
+		$this->persistAccessToken = is_string($persistAccessToken)
+			? filter_var($persistAccessToken, FILTER_VALIDATE_BOOLEAN)
+			: (bool)$persistAccessToken;
 	}
 
 	public function find(string $identifier): ?AccessTokenInterface
@@ -46,6 +49,7 @@ final class AccessTokenManager implements AccessTokenManagerInterface
 			'WHERE' => 'at.access_token = \'' . $this->db->sql_escape($identifier) . '\'',
 		];
 		$sql = $this->db->sql_build_query('SELECT', $sql_arr);
+		
 		$result = $this->db->sql_query($sql);
 		$row = $this->db->sql_fetchrow($result);
 
@@ -114,9 +118,9 @@ final class AccessTokenManager implements AccessTokenManagerInterface
 			'revoked' => $accessToken->isRevoked() ? 1 : 0,
 		];
 
-
 		$sql = 'INSERT INTO ' . $this->table . ' ' . $this->db->sql_build_array('INSERT',
 				$data) . ' ON DUPLICATE KEY UPDATE ' . $this->db->sql_build_array('UPDATE', $data);
+		
 		$result = $this->db->sql_query($sql);
 		$this->db->sql_freeresult($result);
 	}

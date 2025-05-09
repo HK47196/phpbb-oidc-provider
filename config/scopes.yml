@@ -2,3 +2,4 @@ scopes:
   - 'openid'
   - 'email'
   - 'profile'
+  - 'offline_access'

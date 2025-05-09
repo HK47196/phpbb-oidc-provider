@@ -36,9 +36,7 @@ class OAuth2Service
 		$privateKey = new CryptKey('/run/secrets/oauth_private_key', null, false);
 		$encryptionKey = getenv('OAUTH_ENC_KEY');
 
-		//We add sid here for backchannel logout
 		$openIdClaimSet = new ClaimSetEntity('openid', ['sid']);
-		//NOTE: ClaimExtractor maps claimsets to claims
 		$responseType = new IdTokenResponse($identityRepository, new ClaimExtractor([$openIdClaimSet]));
 
 		$this->authorizationServer = new AuthorizationServer(

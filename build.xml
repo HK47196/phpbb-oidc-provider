@@ -24,6 +24,7 @@
                 <include name="composer.lock"/>
                 <include name="composer.json"/>
                 <include name="config/**"/>
+                <exclude name="config/clients.yml"/>
                 <include name="event/**"/>
                 <include name="core/**"/>
                 <include name="Core/**"/>

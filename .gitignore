@@ -134,3 +134,14 @@ fabric.properties
 /build/
 
 # End of https://www.toptal.com/developers/gitignore/api/phpstorm,phpunit
+
+# Playwright
+playwright-tests/node_modules/
+playwright-tests/test-results/
+playwright-tests/playwright-report/
+playwright-tests/blob-report/
+playwright-tests/playwright/.cache/
+playwright-tests/playwright/.cache/
+
+# Environment variables
+playwright-tests/.env

@@ -14,8 +14,11 @@ use Lcobucci\JWT\Token\Builder;
 use phpbb\db\driver\driver_interface;
 use phpbb\request\request;
 use phpbb\user_loader;
+use phpbb\config\config;
+use RuntimeException;
 use stdClass;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Yaml\Yaml;
 
 class main_listener implements EventSubscriberInterface
 {
@@ -26,6 +29,8 @@ class main_listener implements EventSubscriberInterface
 	private string $auth_code_table;
 	private ClientManagerInterface $clientManager;
 	private request $request;
+	private config $config;
+	private array $identityConfig;
 
 	public function __construct(user_loader            $user_loader,
 	                            driver_interface       $db,
@@ -33,7 +38,8 @@ class main_listener implements EventSubscriberInterface
 	                            string                 $refresh_token_table,
 	                            string                 $auth_code_table,
 	                            ClientManagerInterface $clientManager,
-	                            request                $request)
+	                            request                $request,
+	                            config                 $config)
 	{
 		$this->user_loader = $user_loader;
 		$this->db = $db;
@@ -42,6 +48,15 @@ class main_listener implements EventSubscriberInterface
 		$this->auth_code_table = $auth_code_table;
 		$this->clientManager = $clientManager;
 		$this->request = $request;
+		$this->config = $config;
+		
+		// Load identity configuration directly from the YAML file
+        $identityYmlPath = __DIR__ . '/../config/identity.yml';
+        if (file_exists($identityYmlPath)) {
+            $this->identityConfig = Yaml::parse(file_get_contents($identityYmlPath));
+        } else {
+            $this->identityConfig = [];
+        }
 	}
 
 	public static function getSubscribedEvents(): array
@@ -141,14 +156,16 @@ class main_listener implements EventSubscriberInterface
 
 		$now = new DateTimeImmutable();
 
-
 		$claimsFormatter = ChainedFormatter::withUnixTimestampDates();
 
-		// Add required id_token claims
-
-
 		$clients = $this->clientManager->list();
-		$issuer = 'https://' . $this->request->server('HTTP_HOST', '');
+		$issuer = $this->identityConfig['issuer'] ?? '';
+		
+		// Require issuer configuration - don't fallback to dynamic generation
+		if (empty($issuer)) {
+			throw new RuntimeException('The issuer is not configured in config/identity.yml. Please set the "issuer" parameter with a valid URL including schema (https://) and any port if needed.');
+		}
+		
 		foreach ($clients as $client) {
 			try {
 				$logOutUrl = $client->backChannelLogoutUrl();

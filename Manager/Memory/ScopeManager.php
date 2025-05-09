@@ -31,6 +31,14 @@ class ScopeManager implements ScopeManagerInterface
 	{
 		throw new \RuntimeException('Not implemented');
 	}
+	
+	/**
+	 * @return list<Scope>
+	 */
+	public function findAll(): array
+	{
+		return $this->scopes;
+	}
 
 	/**
 	 * @return list<Scope>
