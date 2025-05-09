@@ -35,8 +35,6 @@ class OAuth2Service
 	{
 		$privateKey = new CryptKey('/run/secrets/oauth_private_key', null, false);
 		$encryptionKey = getenv('OAUTH_ENC_KEY');
-		// Note: Passing the raw base64-encoded string directly as the encryption key.
-		// This allows the library to treat it as a password for key derivation.
 
 		$openIdClaimSet = new ClaimSetEntity('openid', ['sid']);
 		$responseType = new IdTokenResponse($identityRepository, new ClaimExtractor([$openIdClaimSet]));

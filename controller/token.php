@@ -52,7 +52,13 @@ class token
 			error_log('OAuthServerException: ' . $e->getMessage());
 			$response = $e->generateHttpResponse($serverResponse);
 		} catch (Exception $e) {
-			error_log(__FILE__ . ':' . __LINE__ . ': ' . 'Exception: ' . $e->getMessage());
+			// Log detailed information about the request and error
+			$requestBody = file_get_contents('php://input');
+			$requestDetails = 'Request Body: ' . $requestBody;
+			$errorDetails = 'Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
+			$stackTrace = 'Stack Trace: ' . $e->getTraceAsString();
+			error_log(__FILE__ . ':' . __LINE__ . ': ' . $errorDetails . '; ' . $requestDetails);
+			error_log(__FILE__ . ':' . __LINE__ . ': ' . $stackTrace);
 			$response = $serverResponse->withStatus(500);
 		}
 

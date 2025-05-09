@@ -21,9 +21,16 @@ class IdTokenResponse extends OpenIDConnectServerIdTokenResponse
 		$builder = parent::getBuilder($accessToken, $userEntity);
 
 		$code = $request->variable('code', '');
-		$authCodePayload = json_decode($this->decrypt($code), true, 512, JSON_THROW_ON_ERROR);
-
-		if (isset($authCodePayload['nonce'])) {
+		$authCodePayload = [];
+		if (!empty($code)) {
+			try {
+				$authCodePayload = json_decode($this->decrypt($code), true, 512, JSON_THROW_ON_ERROR);
+			} catch (\Exception $e) {
+				error_log('IdTokenResponse: Failed to decrypt code: ' . $e->getMessage());
+			}
+		}
+		
+		if (!empty($authCodePayload) && isset($authCodePayload['nonce'])) {
 			$builder = $builder->withClaim('nonce', $authCodePayload['nonce']);
 		}
 
