@@ -34,7 +34,7 @@ class OAuth2Service
 	)
 	{
 		$privateKey = new CryptKey('/run/secrets/oauth_private_key', null, false);
-		$encryptionKey = getenv('OAUTH_ENC_KEY');
+		$encryptionKey = base64_decode(getenv('OAUTH_ENC_KEY'));
 
 		$openIdClaimSet = new ClaimSetEntity('openid', ['sid']);
 		$responseType = new IdTokenResponse($identityRepository, new ClaimExtractor([$openIdClaimSet]));
