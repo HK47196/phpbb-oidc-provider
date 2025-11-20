@@ -93,7 +93,12 @@ final class RefreshTokenRepository implements RefreshTokenRepositoryInterface
 
 	private function buildRefreshTokenModel(RefreshTokenEntityInterface $refreshTokenEntity): RefreshTokenModel
 	{
-		$accessToken = $this->accessTokenManager->find($refreshTokenEntity->getAccessToken()->getIdentifier());
+		$accessTokenIdentifier = $refreshTokenEntity->getAccessToken()->getIdentifier();
+		$accessToken = $this->accessTokenManager->find($accessTokenIdentifier);
+
+		if ($accessToken === null) {
+			throw new \RuntimeException("Access token '{$accessTokenIdentifier}' not found when building refresh token");
+		}
 
 		return new RefreshTokenModel(
 			$refreshTokenEntity->getIdentifier(),

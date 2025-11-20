@@ -114,8 +114,13 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
 
 	private function buildAccessTokenModel(AccessTokenEntityInterface $accessTokenEntity): AccessTokenModel
 	{
-		/** @var AbstractClient $client */
-		$client = $this->clientManager->find($accessTokenEntity->getClient()->getIdentifier());
+		$clientIdentifier = $accessTokenEntity->getClient()->getIdentifier();
+		/** @var AbstractClient|null $client */
+		$client = $this->clientManager->find($clientIdentifier);
+
+		if ($client === null) {
+			throw new \RuntimeException("Client '{$clientIdentifier}' not found when building access token");
+		}
 
 		$userIdentifier = $accessTokenEntity->getUserIdentifier();
 

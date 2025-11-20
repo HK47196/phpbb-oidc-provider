@@ -60,6 +60,9 @@ final class RefreshTokenManager implements RefreshTokenManagerInterface
 	                                         string $revoked): RefreshTokenInterface
 	{
 		$at = $this->accessTokenManager->find($access_token);
+		if ($at === null) {
+			throw new Exception("Access token '{$access_token}' not found for refresh token '{$refresh_token}'");
+		}
 
 		$expiry = DateTimeImmutable::createFromFormat('U', $expires_at);
 		return new RefreshToken(
