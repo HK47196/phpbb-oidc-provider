@@ -84,6 +84,7 @@ services:
     arguments:
       - '@dbal.conn'
       - '@HK47196\OIDCProvider\Manager\DB\AccessTokenManager'
+      - '@HK47196\OIDCProvider\Manager\Memory\ClientManager'
       - '%hk47196.oidcprovider.refresh_token_table%'
   HK47196\OIDCProvider\Manager\Memory\ScopeManager:
 
