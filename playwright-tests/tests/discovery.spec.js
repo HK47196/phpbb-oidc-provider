@@ -70,6 +70,11 @@ test('should handle scope validation in authorization request', async ({ page })
   authUrl.searchParams.set('scope', invalidScope);
   authUrl.searchParams.set('state', state);
   
+  // Intercept the redirect to the callback URI to prevent connection error
+  await page.route((url) => url.href.startsWith(redirectUri), (route) => {
+    route.fulfill({ status: 200, body: 'Redirect captured' });
+  });
+
   await page.goto(authUrl.toString());
   
   // We expect either:

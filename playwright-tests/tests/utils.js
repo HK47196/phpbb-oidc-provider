@@ -80,6 +80,11 @@ export async function exchangeCodeForTokens(request, { baseUrl, code, redirectUr
     }
   });
 
+  if (!tokenResponse.ok()) {
+    console.error(`Token exchange failed: ${tokenResponse.status()} ${tokenResponse.statusText()}`);
+    console.error(await tokenResponse.text());
+  }
+
   expect(tokenResponse.ok()).toBeTruthy();
   return await tokenResponse.json();
 }
