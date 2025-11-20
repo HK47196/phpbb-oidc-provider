@@ -73,6 +73,9 @@ final class AuthorizationCodeManager implements AuthorizationCodeManagerInterfac
 		$sc = json_decode($scopes, true, 512, JSON_THROW_ON_ERROR);
 		$sc = array_map(static fn(string $scope) => new Scope($scope), $sc);
 		$expiry = DateTimeImmutable::createFromFormat('U', $expires_at);
+		if ($expiry === false) {
+			throw new RuntimeException("Failed to parse expires_at timestamp: {$expires_at}");
+		}
 		return new AuthorizationCode($auth_code, $expiry, $cl, $user_id, $sc, (bool)$revoked);
 	}
 

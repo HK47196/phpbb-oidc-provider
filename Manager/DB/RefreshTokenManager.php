@@ -65,6 +65,9 @@ final class RefreshTokenManager implements RefreshTokenManagerInterface
 		}
 
 		$expiry = DateTimeImmutable::createFromFormat('U', $expires_at);
+		if ($expiry === false) {
+			throw new Exception("Failed to parse expires_at timestamp: {$expires_at}");
+		}
 		return new RefreshToken(
 			$refresh_token,
 			$expiry,
