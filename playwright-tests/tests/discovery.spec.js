@@ -62,38 +62,42 @@ test('should handle scope validation in authorization request', async ({ page })
   const redirectUri = 'https://localhost:9999/callback';
   const invalidScope = 'openid invalid_scope';
   const state = `state_${Date.now()}`;
-  
+
   const authUrl = new URL(`${process.env.BASE_URL}/oauth2/v1/authorize`);
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', redirectUri);
   authUrl.searchParams.set('scope', invalidScope);
   authUrl.searchParams.set('state', state);
-  
-  // Intercept the redirect to the callback URI to prevent connection error
-  await page.route((url) => url.href.startsWith(redirectUri), (route) => {
-    route.fulfill({ status: 200, body: 'Redirect captured' });
+
+  // Wait for the redirect to the callback URI (will be a 302 redirect)
+  // Note: page.route() cannot intercept HTTP redirects, so we use waitForRequest instead
+  let redirectUrl;
+  const redirectRequest = page.waitForRequest((request) => {
+    if (request.url().startsWith(redirectUri) && request.method() === 'GET') {
+      redirectUrl = new URL(request.url());
+      return true;
+    }
+    return false;
   });
 
-  await page.goto(authUrl.toString());
-  
-  // We expect either:
-  // 1. A redirect with error=invalid_scope
-  // 2. An error page from the OIDC provider
-  
-  const url = page.url();
-  if (url.startsWith(redirectUri)) {
-    const parsedUrl = new URL(url);
-    const error = parsedUrl.searchParams.get('error');
-    const errorDescription = parsedUrl.searchParams.get('error_description');
-    const returnedState = parsedUrl.searchParams.get('state');
-    
-    expect(error).toBe('invalid_scope');
-    expect(errorDescription).toBeTruthy();
-    expect(returnedState).toBe(state);
-  } else {
-    await expect(page.locator('body')).toContainText(/invalid scope|scope/i);
-  }
+  await page.goto(authUrl.toString()).catch(() => {
+    // Ignore connection refused error since localhost:9999 doesn't exist
+    // We're only interested in capturing the redirect request
+  });
+
+  // Wait for the redirect request
+  await redirectRequest;
+
+  // Validate the error redirect
+  expect(redirectUrl).toBeTruthy();
+  const error = redirectUrl.searchParams.get('error');
+  const errorDescription = redirectUrl.searchParams.get('error_description');
+  const returnedState = redirectUrl.searchParams.get('state');
+
+  expect(error).toBe('invalid_scope');
+  expect(errorDescription).toBeTruthy();
+  expect(returnedState).toBe(state);
 });
 
 test('should handle missing parameters in authorization request', async ({ page }) => {

@@ -60,6 +60,28 @@ class authorization
 		$serverRequest = $this->creator->fromGlobals();
 		$serverResponse = $this->responseFactory->createResponse();
 		$authServer = $this->oauth2Service->getAuthorizationServer();
+
+		// Early validation: check for required parameters before processing
+		$queryParams = $serverRequest->getQueryParams();
+
+		// Extract state parameter early for error handling (RFC 6749 Section 4.1.2.1)
+		// State must be preserved in error responses if it was in the request
+		$stateParameter = $queryParams['state'] ?? null;
+
+		if (empty($queryParams['redirect_uri'])) {
+			// Per OAuth 2.0 spec (RFC 6749 Section 4.1.2.1), if redirect_uri is invalid or missing,
+			// the authorization server MUST NOT redirect and should inform the resource owner
+			$errorResponse = $this->responseFactory->createResponse(400);
+			$errorResponse->getBody()->write(
+				'<html><head><title>OAuth 2.0 Error</title></head><body>' .
+				'<h1>Invalid Authorization Request</h1>' .
+				'<p><strong>Error:</strong> invalid_request</p>' .
+				'<p><strong>Description:</strong> The redirect_uri parameter is missing or invalid.</p>' .
+				'</body></html>'
+			);
+			return $this->httpFoundationFactory->createResponse($errorResponse);
+		}
+
 		try {
 			// Validate the authorization request
 			$authRequest = $authServer->validateAuthorizationRequest($serverRequest);
@@ -95,6 +117,18 @@ class authorization
 		} catch (Exception $e) {
 			if ($e instanceof OAuthServerException) {
 				$response = $e->generateHttpResponse($serverResponse);
+
+				// Per RFC 6749 Section 4.1.2.1, if state was provided in request,
+				// it MUST be included in error redirects
+				if ($stateParameter !== null && $response->getStatusCode() === 302) {
+					$location = $response->getHeader('Location')[0] ?? null;
+					if ($location !== null) {
+						// Parse the location URL and add state parameter
+						$separator = strpos($location, '?') !== false ? '&' : '?';
+						$location .= $separator . 'state=' . urlencode($stateParameter);
+						$response = $response->withHeader('Location', $location);
+					}
+				}
 			} else {
 				$response = $this->responseFactory->createResponse(500, 'An error occurred');
 			}
