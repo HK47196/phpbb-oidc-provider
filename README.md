@@ -1,4 +1,4 @@
-This was created for internal usage and is a WIP, it is not ready to be used by others.
+This was created for a client, it is not ready to be used by others.
 
 ## Environment Variables
 
